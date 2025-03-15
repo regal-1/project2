@@ -64,39 +64,47 @@ def feature_search(df1, df2):
 
     return curr_features
 
-def leave_one_out_cross_validation(df1, df2, features, i):
+def leave_one_out_cross_validation(class1_df, class2_df, features, i):
     features.append(i)
     print("features", features)
     # print(df1)
-    df_length = len(df1)
+    
     num_matches = 0
     miscount = 0
 
     for feature in features:
         print("Processing feature:", feature)
-        for index in range(df_length):
-            #making a copy so the original df1 remains unchanged
-            df_temp = df1.copy()
-            
-            #saving row to leave out
-            row = df_temp.iloc[index]
-            # print("Before dropping row at index:", index)
-            # print(df_temp.head(3))
-            
-            #temp df w the row dropped
-            df_temp = df_temp.drop(df_temp.index[index]).reset_index(drop=True)
-            # print("After dropping row at index:", index)
-            # print(df_temp.head(3))
-        
-            d1 = find_nearest(df_temp, feature, np.array(row)[feature])
-            d2 = find_nearest(df2, feature, np.array(row)[feature])
-            # print("Distance d1 from class1 = ", d1, "for feature = ", feature)
-            # print("Distance d2 from class2 = ", d2, "for feature = ", feature)
-            
-            if d1 < d2:
-                num_matches = num_matches + 1
+        for cl in range(0, 2):
+            if cl == 0:
+                df1 = class1_df
+                df2 = class2_df
             else:
-                miscount = miscount + 1
+                df1 = class2_df
+                df2 = class1_df
+            df_length = len(df1)
+            for index in range(df_length):
+                #making a copy so the original df1 remains unchanged
+                df_temp = df1.copy()
+                
+                #saving row to leave out
+                row = df_temp.iloc[index]
+                # print("Before dropping row at index:", index)
+                # print(df_temp.head(3))
+                
+                #temp df w the row dropped
+                df_temp = df_temp.drop(df_temp.index[index]).reset_index(drop=True)
+                # print("After dropping row at index:", index)
+                # print(df_temp.head(3))
+            
+                d1 = find_nearest(df_temp, feature, np.array(row)[feature])
+                d2 = find_nearest(df2, feature, np.array(row)[feature])
+                # print("Distance d1 from class1 = ", d1, "for feature = ", feature)
+                # print("Distance d2 from class2 = ", d2, "for feature = ", feature)
+                
+                if d1 < d2:
+                    num_matches = num_matches + 1
+                else:
+                    miscount = miscount + 1
     accuracy = (num_matches/(num_matches + miscount)) * 100
     print("accuracy: ", accuracy)
     return accuracy
