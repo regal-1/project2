@@ -65,35 +65,44 @@ def feature_search(df1, df2):
     return curr_features
 
 def leave_one_out_cross_validation(df1, df2, features, i):
-    #return randrange(0, 101, 2)
     features.append(i)
-    print("features ", features)
-    print(df1)
+    print("features", features)
+    # print(df1)
     df_length = len(df1)
-
+    num_matches = 0
+    miscount = 0
 
     for feature in features:
-        print(feature, df1)
-        for index in range(0, len(df1)): 
-            #save the row in a variable before dropping
-            row = df1.iloc[index]
-            # Drop a single row at position i
-            df1 = df1.drop(df1.index[i])
-            d = find_nearest(df1, feature, np.array(row)[feature])
-            if index == 0:
-                df1 = pd.concat([pd.DataFrame([row]), df1], ignore_index=True)
-            elif index == df_length - 1:
-                pd.concat([df1, pd.DataFrame([row])]).reset_index(drop=True)
-            else:
-                df1 = pd.concat([df1.iloc[:index - 1], pd.DataFrame([row]), df1.iloc[index]]).reset_index(drop=True)
-            print(df1)
-            print("distance = ", d, "feature = ", feature)
-    return randrange(0, 101, 2)
+        print("Processing feature:", feature)
+        for index in range(df_length):
+            #making a copy so the original df1 remains unchanged
+            df_temp = df1.copy()
             
-
-
+            #saving row to leave out
+            row = df_temp.iloc[index]
+            # print("Before dropping row at index:", index)
+            # print(df_temp.head(3))
+            
+            #temp df w the row dropped
+            df_temp = df_temp.drop(df_temp.index[index]).reset_index(drop=True)
+            # print("After dropping row at index:", index)
+            # print(df_temp.head(3))
+        
+            d1 = find_nearest(df_temp, feature, np.array(row)[feature])
+            d2 = find_nearest(df2, feature, np.array(row)[feature])
+            # print("Distance d1 from class1 = ", d1, "for feature = ", feature)
+            # print("Distance d2 from class2 = ", d2, "for feature = ", feature)
+            
+            if d1 < d2:
+                num_matches = num_matches + 1
+            else:
+                miscount = miscount + 1
+    accuracy = (num_matches/(num_matches + miscount)) * 100
+    print("accuracy: ", accuracy)
+    return accuracy
+                        
 def debug_csv():
-    class1, class2 = read_data("CS170_Small_Data__10.txt")
+    class1, class2 = read_data("CS170_Small_Data__98.txt")
     print("Class 1:")
     print(class1)
     print("\nClass 2:")
