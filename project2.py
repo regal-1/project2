@@ -2,10 +2,11 @@
 from random import randrange
 import pandas as pd # type: ignore
 import numpy as np # type: ignore
+import copy 
 
 def read_data(fileName):  
     #read file using pandas
-    df = pd.read_csv(fileName, header=None, delim_whitespace=True)
+    df = pd.read_csv(fileName, delimiter=r'\s+', header=None)
 
     #filter rows by class label; boolean indexing
     df_class1 = df[df.iloc[:, 0].astype(int) == 1]
@@ -21,17 +22,20 @@ def read_data(fileName):
 
 #compute distance between two points
 def distance(a, b):
-    return np.sqrt(((a - b) ** 2))
+    # print("a in distance = ", a)
+    # print("b in distance = ", b)
+    return np.sqrt(np.sum((a - b) ** 2))
 
 #finds nearest neighbor in array
-def find_nearest(df, feature, data):
-    #print("feature: ", feature)
-    #print("point: ", data)
-    class1 = df.iloc[:, feature]
-    dist = np.array([distance(data, x) for x in class1])
-    #print("distance: ", dist)
+def find_nearest(df, features, data):
+    # print("feature: ", features)
+    # print("point: ", data)
+    myclass = df.iloc[:, features].to_numpy()
+    # print("myclass = ", myclass)
+    dist = np.array([distance(data, x) for x in myclass])
+    # print("distance: ", dist)
     index_of_nearest = np.argmin(dist)
-    #print("nearest: ", dist[index_of_nearest])
+    # print("nearest: ", dist[index_of_nearest])
     return dist[index_of_nearest]
 
 def feature_search(df1, df2):
@@ -42,75 +46,81 @@ def feature_search(df1, df2):
     #for i = 1 to i <= feature, search the ith level
     #try combinations of features, select best at each level, move forward to combos of best feature + others
     for i in range(0, num_features):
-        print(f"On the {i+1}th level of the search tree")
+        print(f"On the {i+1} level of the search tree")
         feature_to_add = None
         best_so_far_accuracy = 0
+        accuracy = [0] * num_features
         for j in range(0, num_features):
             #once we add a feature, we should not add it again
             if j not in curr_features:
                 print(f"-- Considering adding the {j+1} feature")
-                #data = , need to define this
-                accuracy =  leave_one_out_cross_validation(df1, df2, curr_features, j)
+                accuracy[j] =  leave_one_out_cross_validation(df1, df2, curr_features, j)
+        
+        print("accuracy: ", accuracy)
 
-                #if new accuracy is better than prev accuracy, we can add feature j
-                if accuracy > best_so_far_accuracy:
-                    best_so_far_accuracy = accuracy
-                    feature_to_add = j
+        for j in range(0, num_features):
+            #if new accuracy is better than prev accuracy, we can add feature j
+            if accuracy[j] > best_so_far_accuracy:
+                best_so_far_accuracy = accuracy[j]
+                feature_to_add = j
                 
         #add to current features
         if feature_to_add:
             curr_features.append(feature_to_add)
-            print(f"On level {i+1}, I added feature {feature_to_add}+1 " f"to current set {curr_features}")
+            print(f"On level {i+1}, I added feature {feature_to_add+1} " f"to current set {[x + 1 for x in curr_features]}")
 
     return curr_features
 
-def leave_one_out_cross_validation(class1_df, class2_df, features, i):
+def leave_one_out_cross_validation(class1_df, class2_df, in_features, i):
+    features = copy.deepcopy(in_features)
     features.append(i)
-    print("features", features)
+    # print("features", features + 1)
     # print(df1)
     
-    num_matches = 0
-    miscount = 0
+    hit = 0
+    miss = 0
 
-    for feature in features:
-        print("Processing feature:", feature)
-        for cl in range(0, 2):
-            if cl == 0:
-                df1 = class1_df
-                df2 = class2_df
-            else:
-                df1 = class2_df
-                df2 = class1_df
-            df_length = len(df1)
-            for index in range(df_length):
-                #making a copy so the original df1 remains unchanged
-                df_temp = df1.copy()
-                
-                #saving row to leave out
-                row = df_temp.iloc[index]
-                # print("Before dropping row at index:", index)
-                # print(df_temp.head(3))
-                
-                #temp df w the row dropped
-                df_temp = df_temp.drop(df_temp.index[index]).reset_index(drop=True)
-                # print("After dropping row at index:", index)
-                # print(df_temp.head(3))
+    #for feature in features:
+    # print("Processing feature:", features + 1)
+    for cl in range(0, 2):
+        if cl == 0:
+            df1 = class1_df
+            df2 = class2_df
+        else:
+            df1 = class2_df
+            df2 = class1_df
+        df_length = len(df1)
+        for index in range(df_length):
+            #making a copy so the original df1 remains unchanged
+            df_temp = df1.copy()
             
-                d1 = find_nearest(df_temp, feature, np.array(row)[feature])
-                d2 = find_nearest(df2, feature, np.array(row)[feature])
-                # print("Distance d1 from class1 = ", d1, "for feature = ", feature)
-                # print("Distance d2 from class2 = ", d2, "for feature = ", feature)
-                
-                if d1 < d2:
-                    num_matches = num_matches + 1
-                else:
-                    miscount = miscount + 1
-    accuracy = (num_matches/(num_matches + miscount)) * 100
+            #saving row to leave out
+            row = df_temp.iloc[index]
+            # print("Before dropping row at index:", index)
+            # print(df_temp.head(3))
+            
+            #temp df w the row dropped
+            df_temp = df_temp.drop(df_temp.index[index]).reset_index(drop=True)
+            # print("After dropping row at index:", index)
+            # print(df_temp.head(3))
+        
+            d1 = find_nearest(df_temp, features, np.array(row)[features])
+            d2 = find_nearest(df2, features, np.array(row)[features])
+            # print("Distance d1 from class1 = ", d1, "for feature = ", features)
+            # print("Distance d2 from class2 = ", d2, "for feature = ", features)
+            
+            if d1 < d2:
+                hit = hit + 1
+            else:
+                miss = miss + 1
+    accuracy = (hit/(hit + miss)) * 100
     print("accuracy: ", accuracy)
+    print("hit: ", hit)
+    print("miss = ", miss)
     return accuracy
                         
 def debug_csv():
-    class1, class2 = read_data("CS170_Small_Data__98.txt")
+    class1, class2 = read_data("CS170_Small_Data__10.txt")
     print("Class 1:")
     print(class1)
     print("\nClass 2:")
