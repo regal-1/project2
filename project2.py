@@ -16,27 +16,17 @@ def read_data(fileName):
     df_class1 = df_class1.iloc[:, 1:]
     df_class2 = df_class2.iloc[:, 1:]
 
-    # df_class1 = df_class1.apply(np.sort, axis=0)
-    # df_class2 = df_class2.apply(np.sort, axis=0)
-
     return df_class1, df_class2
 
 #compute distance between two points
 def distance(a, b):
-    # print("a in distance = ", a)
-    # print("b in distance = ", b)
     return np.sqrt(np.sum((a - b) ** 2))
 
 #finds nearest neighbor in array
 def find_nearest(df, features, data):
-    # print("feature: ", features)
-    # print("point: ", data)
     myclass = df.iloc[:, features].to_numpy()
-    # print("myclass = ", myclass)
     dist = np.array([distance(data, x) for x in myclass])
-    # print("distance: ", dist)
     index_of_nearest = np.argmin(dist)
-    # print("nearest: ", dist[index_of_nearest])
     return dist[index_of_nearest]
 
 def feature_search_forward(df1, df2, alg):
@@ -58,7 +48,6 @@ def feature_search_forward(df1, df2, alg):
             #once we add a feature, we should not add it again
             if alg == "1":
                 if j not in curr_features:
-                # print(f"-- Considering adding feature {j+1}")
                     features = copy.deepcopy(curr_features)
                     features.append(j)
                     accuracy[j] =  leave_one_out_cross_validation(df1, df2, features)
@@ -70,7 +59,6 @@ def feature_search_forward(df1, df2, alg):
         #print("accuracy: ", accuracy)
 
         for j in range(0, num_features):
-            # print("accuracy: ", accuracy[j], "bsf: ", best_so_far_accuracy)
             #if new accuracy is better than prev accuracy, we can add feature j
             if accuracy[j] > best_so_far_accuracy:
                 best_so_far_accuracy = accuracy[j]
@@ -90,15 +78,11 @@ def feature_search_forward(df1, df2, alg):
 
 
 def leave_one_out_cross_validation(class1_df, class2_df, features): 
-    # print("features", features + 1)
-    # print(df1)
     
     hit = 0
     miss = 0
     tie = 0
 
-    #for feature in features:
-    # print("Processing feature:", features + 1)
     for cl in range(2):
         if cl == 0:
             df1 = class1_df
@@ -113,24 +97,18 @@ def leave_one_out_cross_validation(class1_df, class2_df, features):
             
             #saving row to leave out
             row = df_temp.iloc[index]
-            # print("Before dropping row at index:", index)
-            # print(df_temp.head(3))
             
             #temp df w the row dropped
             df_temp = df_temp.drop(df_temp.index[index]).reset_index(drop=True)
-            # print("After dropping row at index:", index)
-            # print(df_temp.head(3))
         
             d1 = find_nearest(df_temp, features, np.array(row)[features])
             d2 = find_nearest(df2, features, np.array(row)[features])
-            # print("Distance d1 from class1 = ", d1, "for feature = ", features)
-            # print("Distance d2 from class2 = ", d2, "for feature = ", features)
+
             
             if d1 < d2:
                 hit += 1
             elif d2 < d1:
-                # print("Distance d1 from class1 = ", d1, "for feature = ", features)
-                # print("Distance d2 from class2 = ", d2, "for feature = ", features)
+    
                 miss += 1
             else:
                 tie += 1
@@ -138,21 +116,14 @@ def leave_one_out_cross_validation(class1_df, class2_df, features):
     accuracy = (hit/total) * 100
     accuracy = round(accuracy, 2)
     print(f"Using feature(s) {[x + 1 for x in features]}, accuracy is ", accuracy)
-    # print("hit: ", hit)
-    # print("miss = ", miss)
     return accuracy
                         
 def main():
-    # class1, class2 = read_data("CS170_Small_Data__98.txt")
     dataset = input("Type in the name of the file to test:" + '\n')
     alg = input("Type in the number of the algorithm you would like to use:" + '\n'
                       "1) Forward Selection" + '\n'
                       "2) Backward Elimination" + '\n')
     class1, class2 = read_data(dataset)
-    # print("Class 1:")
-    # print(class1)
-    # print("\nClass 2:")
-    # print(class2)
     print(f"This dataset has {len(class1.columns)} features (not including the class attribute), " 
           f"with {len(class1)+ len(class2)} instances.")
     if alg == "1" or alg == "2":
