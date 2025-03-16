@@ -73,7 +73,7 @@ def feature_search_forward(df1, df2, alg):
             curr_features = [x for x in curr_features if x != feature_to_add ]
             print(f"On level {i+1}, I removed feature {feature_to_add+1} " f"from current set {[x + 1 for x in curr_features]}")
 
-    print(f"Finished search!! The best feature subset is {[x + 1 for x in curr_features]} which has an accuracy of {best_so_far_accuracy}.")
+    print(f"Finished search!! The best feature subset is {[x + 1 for x in curr_features]} which has an accuracy of {best_so_far_accuracy}%.")
     return curr_features 
 
 
@@ -115,7 +115,7 @@ def leave_one_out_cross_validation(class1_df, class2_df, features):
     total = hit + miss + tie
     accuracy = (hit/total) * 100
     accuracy = round(accuracy, 2)
-    print(f"Using feature(s) {[x + 1 for x in features]}, accuracy is ", accuracy)
+    print(f"Using feature(s) {[x + 1 for x in features]}, accuracy is {accuracy}%." )
     return accuracy
                         
 def main():
