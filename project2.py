@@ -39,12 +39,15 @@ def find_nearest(df, features, data):
     # print("nearest: ", dist[index_of_nearest])
     return dist[index_of_nearest]
 
-def feature_search_forward(df1, df2):
+def feature_search_forward(df1, df2, alg):
     #start empty feature set
-    curr_features = []
     num_features = len(df1.columns)
     best_so_far_accuracy = 0
-
+    if alg == "1":
+        curr_features = []
+    if alg == "2":
+        curr_features = [x for x in range(num_features)]
+        best_so_far_accuracy = leave_one_out_cross_validation(df1, df2, curr_features)
     #for i = 1 to i <= feature, search the ith level
     #try combinations of features, select best at each level, move forward to combos of best feature + others
     for i in range(0, num_features):
@@ -53,11 +56,18 @@ def feature_search_forward(df1, df2):
         accuracy = [0] * num_features
         for j in range(0, num_features):
             #once we add a feature, we should not add it again
-            if j not in curr_features:
+            if alg == "1":
+                if j not in curr_features:
                 # print(f"-- Considering adding feature {j+1}")
-                accuracy[j] =  leave_one_out_cross_validation(df1, df2, curr_features, j)
-        
-        print("accuracy: ", accuracy)
+                    features = copy.deepcopy(curr_features)
+                    features.append(j)
+                    accuracy[j] =  leave_one_out_cross_validation(df1, df2, features)
+            if alg == "2":
+                    if j in curr_features:
+                        features = [x for x in curr_features if x != j ]
+                        accuracy[j] =  leave_one_out_cross_validation(df1, df2, features)
+ 
+        #print("accuracy: ", accuracy)
 
         for j in range(0, num_features):
             # print("accuracy: ", accuracy[j], "bsf: ", best_so_far_accuracy)
@@ -67,17 +77,19 @@ def feature_search_forward(df1, df2):
                 feature_to_add = j
 
         #add to current features
-        if feature_to_add != None:
+        if alg == "1" and feature_to_add != None:
             curr_features.append(feature_to_add)
             print(f"On level {i+1}, I added feature {feature_to_add+1} " f"to current set {[x + 1 for x in curr_features]}")
+
+        if alg == "2" and feature_to_add != None:
+            curr_features = [x for x in curr_features if x != feature_to_add ]
+            print(f"On level {i+1}, I removed feature {feature_to_add+1} " f"from current set {[x + 1 for x in curr_features]}")
 
     print(f"Finished search!! The best feature subset is {[x + 1 for x in curr_features]} which has an accuracy of {best_so_far_accuracy}.")
     return curr_features 
 
 
-def leave_one_out_cross_validation(class1_df, class2_df, in_features, i):
-    features = copy.deepcopy(in_features)
-    features.append(i)
+def leave_one_out_cross_validation(class1_df, class2_df, features): 
     # print("features", features + 1)
     # print(df1)
     
@@ -141,11 +153,10 @@ def main():
     # print(class1)
     # print("\nClass 2:")
     # print(class2)
-    print(f"This dataset has {len(class1.columns)} features (not including the class attribute)," 
+    print(f"This dataset has {len(class1.columns)} features (not including the class attribute), " 
           f"with {len(class1)+ len(class2)} instances.")
-    if alg == "1":
-        feature_search_forward(class1, class2)
-    # # else:
-    #     feature_search_backward(class1, class2)
-
+    if alg == "1" or alg == "2":
+        feature_search_forward(class1, class2, alg)
+    else:
+        print("Invalid input")
 main()
