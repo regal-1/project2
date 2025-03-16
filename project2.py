@@ -15,8 +15,8 @@ def read_data(fileName):
     df_class1 = df_class1.iloc[:, 1:]
     df_class2 = df_class2.iloc[:, 1:]
 
-    df_class1 = df_class1.apply(np.sort, axis=0)
-    df_class2 = df_class2.apply(np.sort, axis=0)
+    # df_class1 = df_class1.apply(np.sort, axis=0)
+    # df_class2 = df_class2.apply(np.sort, axis=0)
 
     return df_class1, df_class2
 
@@ -42,33 +42,36 @@ def feature_search(df1, df2):
     #start empty feature set
     curr_features = []
     num_features = len(df1.columns)
+    best_so_far_accuracy = 0
 
     #for i = 1 to i <= feature, search the ith level
     #try combinations of features, select best at each level, move forward to combos of best feature + others
     for i in range(0, num_features):
         print(f"On the {i+1} level of the search tree")
         feature_to_add = None
-        best_so_far_accuracy = 0
         accuracy = [0] * num_features
         for j in range(0, num_features):
             #once we add a feature, we should not add it again
             if j not in curr_features:
-                print(f"-- Considering adding the {j+1} feature")
+                print(f"-- Considering adding feature {j+1}")
                 accuracy[j] =  leave_one_out_cross_validation(df1, df2, curr_features, j)
         
         print("accuracy: ", accuracy)
 
         for j in range(0, num_features):
+            print("acccuracy: ", accuracy[j], "bsf: ", best_so_far_accuracy)
             #if new accuracy is better than prev accuracy, we can add feature j
             if accuracy[j] > best_so_far_accuracy:
                 best_so_far_accuracy = accuracy[j]
                 feature_to_add = j
+                print("feature to add: ", feature_to_add)
                 
         #add to current features
-        if feature_to_add:
+        if feature_to_add != None:
             curr_features.append(feature_to_add)
             print(f"On level {i+1}, I added feature {feature_to_add+1} " f"to current set {[x + 1 for x in curr_features]}")
 
+    print(f"Feature set {[x + 1 for x in curr_features]} was the best. Accuracy was {best_so_far_accuracy}.")
     return curr_features
 
 def leave_one_out_cross_validation(class1_df, class2_df, in_features, i):
@@ -79,10 +82,11 @@ def leave_one_out_cross_validation(class1_df, class2_df, in_features, i):
     
     hit = 0
     miss = 0
+    tie = 0
 
     #for feature in features:
     # print("Processing feature:", features + 1)
-    for cl in range(0, 2):
+    for cl in range(2):
         if cl == 0:
             df1 = class1_df
             df2 = class2_df
@@ -110,17 +114,23 @@ def leave_one_out_cross_validation(class1_df, class2_df, in_features, i):
             # print("Distance d2 from class2 = ", d2, "for feature = ", features)
             
             if d1 < d2:
-                hit = hit + 1
+                hit += 1
+            elif d2 < d1:
+                # print("Distance d1 from class1 = ", d1, "for feature = ", features)
+                # print("Distance d2 from class2 = ", d2, "for feature = ", features)
+                miss += 1
             else:
-                miss = miss + 1
-    accuracy = (hit/(hit + miss)) * 100
+                tie += 1
+    total = hit + miss + tie
+    accuracy = (hit/total) * 100
+    accuracy = round(accuracy, 2)
     print("accuracy: ", accuracy)
     print("hit: ", hit)
     print("miss = ", miss)
     return accuracy
                         
 def debug_csv():
-    class1, class2 = read_data("CS170_Small_Data__10.txt")
+    class1, class2 = read_data("CS170_Small_Data__98.txt")
     print("Class 1:")
     print(class1)
     print("\nClass 2:")
