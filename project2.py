@@ -1,5 +1,6 @@
 #nearest neighbor algorithm
 from random import randrange
+import sys
 import pandas as pd # type: ignore
 import numpy as np # type: ignore
 import copy 
@@ -38,7 +39,7 @@ def find_nearest(df, features, data):
     # print("nearest: ", dist[index_of_nearest])
     return dist[index_of_nearest]
 
-def feature_search(df1, df2):
+def feature_search_forward(df1, df2):
     #start empty feature set
     curr_features = []
     num_features = len(df1.columns)
@@ -47,32 +48,32 @@ def feature_search(df1, df2):
     #for i = 1 to i <= feature, search the ith level
     #try combinations of features, select best at each level, move forward to combos of best feature + others
     for i in range(0, num_features):
-        print(f"On the {i+1} level of the search tree")
+        print(f"On level {i+1} of the search tree")
         feature_to_add = None
         accuracy = [0] * num_features
         for j in range(0, num_features):
             #once we add a feature, we should not add it again
             if j not in curr_features:
-                print(f"-- Considering adding feature {j+1}")
+                # print(f"-- Considering adding feature {j+1}")
                 accuracy[j] =  leave_one_out_cross_validation(df1, df2, curr_features, j)
         
         print("accuracy: ", accuracy)
 
         for j in range(0, num_features):
-            print("acccuracy: ", accuracy[j], "bsf: ", best_so_far_accuracy)
+            # print("accuracy: ", accuracy[j], "bsf: ", best_so_far_accuracy)
             #if new accuracy is better than prev accuracy, we can add feature j
             if accuracy[j] > best_so_far_accuracy:
                 best_so_far_accuracy = accuracy[j]
                 feature_to_add = j
-                print("feature to add: ", feature_to_add)
-                
+
         #add to current features
         if feature_to_add != None:
             curr_features.append(feature_to_add)
             print(f"On level {i+1}, I added feature {feature_to_add+1} " f"to current set {[x + 1 for x in curr_features]}")
 
-    print(f"Feature set {[x + 1 for x in curr_features]} was the best. Accuracy was {best_so_far_accuracy}.")
-    return curr_features
+    print(f"Finished search!! The best feature subset is {[x + 1 for x in curr_features]} which has an accuracy of {best_so_far_accuracy}.")
+    return curr_features 
+
 
 def leave_one_out_cross_validation(class1_df, class2_df, in_features, i):
     features = copy.deepcopy(in_features)
@@ -124,22 +125,27 @@ def leave_one_out_cross_validation(class1_df, class2_df, in_features, i):
     total = hit + miss + tie
     accuracy = (hit/total) * 100
     accuracy = round(accuracy, 2)
-    print("accuracy: ", accuracy)
-    print("hit: ", hit)
-    print("miss = ", miss)
+    print(f"Using feature(s) {[x + 1 for x in features]}, accuracy is ", accuracy)
+    # print("hit: ", hit)
+    # print("miss = ", miss)
     return accuracy
                         
-def debug_csv():
-    class1, class2 = read_data("CS170_Small_Data__98.txt")
-    print("Class 1:")
-    print(class1)
-    print("\nClass 2:")
-    print(class2)
-    sample_data = 2
-    feature = 2
-    #index = (find_nearest(class1, feature, sample_data))
-    #print(index, class1.iloc[index, feature])
-    feature_search(class1, class2)
+def main():
+    # class1, class2 = read_data("CS170_Small_Data__98.txt")
+    dataset = input("Type in the name of the file to test:" + '\n')
+    alg = input("Type in the number of the algorithm you would like to use:" + '\n'
+                      "1) Forward Selection" + '\n'
+                      "2) Backward Elimination" + '\n')
+    class1, class2 = read_data(dataset)
+    # print("Class 1:")
+    # print(class1)
+    # print("\nClass 2:")
+    # print(class2)
+    print(f"This dataset has {len(class1.columns)} features (not including the class attribute)," 
+          f"with {len(class1)+ len(class2)} instances.")
+    if alg == "1":
+        feature_search_forward(class1, class2)
+    # # else:
+    #     feature_search_backward(class1, class2)
 
-
-debug_csv()
+main()
