@@ -1,5 +1,4 @@
 #nearest neighbor algorithm
-from random import randrange
 import sys
 import pandas as pd # type: ignore
 import numpy as np # type: ignore
@@ -33,6 +32,10 @@ def feature_search(df1, df2, alg):
     #start empty feature set
     num_features = len(df1.columns)
     best_so_far_accuracy = 0
+
+    #create dict to store tested feature combos
+    tested_combos = {}
+
     if alg == "1":
         curr_features = []
     if alg == "2":
@@ -60,9 +63,13 @@ def feature_search(df1, df2, alg):
 
         for j in range(0, num_features):
             #if new accuracy is better than prev accuracy, we can add feature j
-            if accuracy[j] > best_so_far_accuracy:
+            if accuracy[j] >= best_so_far_accuracy:
                 best_so_far_accuracy = accuracy[j]
                 feature_to_add = j
+        
+        #if we dont find any features that improve the accuracy, we will exit the search
+        if feature_to_add == None:
+            break
 
         #add to current features
         if alg == "1" and feature_to_add != None:
@@ -75,7 +82,6 @@ def feature_search(df1, df2, alg):
 
     print(f"Finished search!! The best feature subset is {set(x + 1 for x in curr_features)} which has an accuracy of {best_so_far_accuracy}%.")
     return curr_features 
-
 
 def leave_one_out_cross_validation(class1_df, class2_df, features): 
     
@@ -104,7 +110,6 @@ def leave_one_out_cross_validation(class1_df, class2_df, features):
             d1 = find_nearest(df_temp, features, np.array(row)[features])
             d2 = find_nearest(df2, features, np.array(row)[features])
 
-            
             if d1 < d2:
                 hit += 1
             elif d2 < d1:
