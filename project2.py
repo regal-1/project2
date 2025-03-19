@@ -31,16 +31,19 @@ def find_nearest(df, features, data):
 def feature_search(df1, df2, alg):
     #start empty feature set
     num_features = len(df1.columns)
-    best_so_far_accuracy = 0
-
-    #create dict to store tested feature combos
-    tested_combos = {}
-
+    
+    #calculate baseline accuracy depending on alg 
     if alg == "1":
+        baseline_accuracy = leave_one_out_cross_validation(df1, df2, [])
+        print(f"Baseline accuracy with no features: {baseline_accuracy}%")
         curr_features = []
-    if alg == "2":
+
+    elif alg == "2":
         curr_features = [x for x in range(num_features)]
-        best_so_far_accuracy = leave_one_out_cross_validation(df1, df2, curr_features)
+        baseline_accuracy = leave_one_out_cross_validation(df1, df2, curr_features)
+    
+    best_so_far_accuracy = baseline_accuracy
+
     #for i = 1 to i <= feature, search the ith level
     #try combinations of features, select best at each level, move forward to combos of best feature + others
     for i in range(0, num_features):
@@ -84,6 +87,12 @@ def feature_search(df1, df2, alg):
     return curr_features 
 
 def leave_one_out_cross_validation(class1_df, class2_df, features): 
+    if not features:
+        total = len(class1_df) + len(class2_df)
+        minority_count = min(len(class1_df), len(class2_df))
+        baseline_accuracy = round((minority_count / total) * 100, 2)
+        print(f"At the beginning of the search, we have no features ({{}}), so the default rate was {baseline_accuracy}%.")
+        return baseline_accuracy
     
     hit = 0
     miss = 0
@@ -118,13 +127,13 @@ def leave_one_out_cross_validation(class1_df, class2_df, features):
             else:
                 tie += 1
     total = hit + miss + tie
-    accuracy = (hit/total) * 100
+    accuracy = (hit / (hit + miss + tie)) * 100
     accuracy = round(accuracy, 2)
     print(f"Using feature(s) {[x + 1 for x in features]}, accuracy is {accuracy}%." )
     return accuracy
                         
 def main():
-    dataset = input("Type in the name of the file to test:" + '\n')
+    dataset = input("Welcome to Rishika Mundada's Feature Selection Algorithm. \nType in the name of the file to test:" + '\n')
     alg = input("Type in the number of the algorithm you would like to use:" + '\n'
                       "1) Forward Selection" + '\n'
                       "2) Backward Elimination" + '\n')
