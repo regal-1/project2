@@ -29,7 +29,7 @@ def find_nearest(df, features, data):
     index_of_nearest = np.argmin(dist)
     return dist[index_of_nearest]
 
-def feature_search_forward(df1, df2, alg):
+def feature_search(df1, df2, alg):
     #start empty feature set
     num_features = len(df1.columns)
     best_so_far_accuracy = 0
@@ -127,7 +127,7 @@ def main():
     print(f"This dataset has {len(class1.columns)} features (not including the class attribute), " 
           f"with {len(class1)+ len(class2)} instances.")
     if alg == "1" or alg == "2":
-        feature_search_forward(class1, class2, alg)
+        feature_search(class1, class2, alg)
     else:
         print("Invalid input")
 main()
