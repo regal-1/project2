@@ -32,7 +32,7 @@ def feature_search(df1, df2, alg):
     #start empty feature set
     num_features = len(df1.columns)
     
-    #calculate baseline accuracy depending on alg 
+    #calculate baseline accuracy depending on alg
     if alg == "1":
         baseline_accuracy = leave_one_out_cross_validation(df1, df2, [])
         print(f"Baseline accuracy with no features: {baseline_accuracy}%")
@@ -58,11 +58,9 @@ def feature_search(df1, df2, alg):
                     features.append(j)
                     accuracy[j] =  leave_one_out_cross_validation(df1, df2, features)
             if alg == "2":
-                    if j in curr_features:
-                        features = [x for x in curr_features if x != j ]
-                        accuracy[j] =  leave_one_out_cross_validation(df1, df2, features)
- 
-        #print("accuracy: ", accuracy)
+                if j in curr_features:
+                    features = [x for x in curr_features if x != j]
+                    accuracy[j] =  leave_one_out_cross_validation(df1, df2, features)
 
         for j in range(0, num_features):
             #if new accuracy is better than prev accuracy, we can add feature j
@@ -80,10 +78,10 @@ def feature_search(df1, df2, alg):
             print(f"On level {i+1}, I added feature {feature_to_add+1} " f"to current set {[x + 1 for x in curr_features]}")
 
         if alg == "2" and feature_to_add != None:
-            curr_features = [x for x in curr_features if x != feature_to_add ]
+            curr_features.remove(feature_to_add)
             print(f"On level {i+1}, I removed feature {feature_to_add+1} " f"from current set {[x + 1 for x in curr_features]}")
 
-    print(f"Finished search!! The best feature subset is {set(x + 1 for x in curr_features)} which has an accuracy of {best_so_far_accuracy}%.")
+    print(f"Finished search!! The best feature subset is {set(x + 1 for x in curr_features)} which has an accuracy of {round(best_so_far_accuracy, 1)}%.")
     return curr_features 
 
 def leave_one_out_cross_validation(class1_df, class2_df, features): 
@@ -118,18 +116,16 @@ def leave_one_out_cross_validation(class1_df, class2_df, features):
         
             d1 = find_nearest(df_temp, features, np.array(row)[features])
             d2 = find_nearest(df2, features, np.array(row)[features])
-
+                        
             if d1 < d2:
                 hit += 1
             elif d2 < d1:
-    
                 miss += 1
             else:
                 tie += 1
     total = hit + miss + tie
-    accuracy = (hit / (hit + miss + tie)) * 100
-    accuracy = round(accuracy, 2)
-    print(f"Using feature(s) {[x + 1 for x in features]}, accuracy is {accuracy}%." )
+    accuracy = ((hit + tie) / (hit + miss + tie)) * 100
+    print(f"Using feature(s) {[x + 1 for x in features]}, accuracy is {round(accuracy, 1)}%." )
     return accuracy
                         
 def main():
