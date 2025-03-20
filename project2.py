@@ -75,11 +75,11 @@ def feature_search(df1, df2, alg):
         #add to current features
         if alg == "1" and feature_to_add != None:
             curr_features.append(feature_to_add)
-            print(f"On level {i+1}, I added feature {feature_to_add+1} " f"to current set {[x + 1 for x in curr_features]}")
+            print(f"On level {i+1}, I added feature {feature_to_add+1} " f"to current set {set([x + 1 for x in curr_features])}")
 
         if alg == "2" and feature_to_add != None:
             curr_features.remove(feature_to_add)
-            print(f"On level {i+1}, I removed feature {feature_to_add+1} " f"from current set {[x + 1 for x in curr_features]}")
+            print(f"On level {i+1}, I removed feature {feature_to_add+1} " f"from current set {set([x + 1 for x in curr_features])}")
 
     print(f"Finished search!! The best feature subset is {set(x + 1 for x in curr_features)} which has an accuracy of {round(best_so_far_accuracy, 1)}%.")
     return curr_features 
@@ -125,7 +125,7 @@ def leave_one_out_cross_validation(class1_df, class2_df, features):
                 tie += 1
     total = hit + miss + tie
     accuracy = ((hit + tie) / (hit + miss + tie)) * 100
-    print(f"Using feature(s) {[x + 1 for x in features]}, accuracy is {round(accuracy, 1)}%." )
+    print(f"Using feature(s) {set([x + 1 for x in features])}, accuracy is {round(accuracy, 1)}%." )
     return accuracy
                         
 def main():
