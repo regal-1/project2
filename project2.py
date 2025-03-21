@@ -1,7 +1,6 @@
-#nearest neighbor algorithm
 import sys
-import pandas as pd # type: ignore
-import numpy as np # type: ignore
+import pandas as pd  #type: ignore
+import numpy as np  #type: ignore
 import copy 
 
 def read_data(fileName):  
@@ -28,79 +27,13 @@ def find_nearest(df, features, data):
     index_of_nearest = np.argmin(dist)
     return dist[index_of_nearest]
 
-def feature_search(df1, df2, alg):
-    #start empty feature set
-    num_features = len(df1.columns)
-
-    #EDIT MADE: added list to store the best accuracy per level
-    #level_best_accuracies = []  
-    
-    #calculate baseline accuracy
-    baseline_accuracy = leave_one_out_cross_validation(df1, df2, list(range(num_features)))
-    print(f"Beginning search. \nRunning nearest neighbor with all {num_features} features, using 'leave-one-out' evaluation, I get an accuracy of: {baseline_accuracy}%")
-    
-    if alg == "1":
-        curr_features = []
-
-    elif alg == "2":
-        curr_features = [x for x in range(num_features)]
-    
-    best_so_far_accuracy = baseline_accuracy
-
-    #for i = 1 to i <= feature, search the ith level
-    #try combinations of features, select best at each level, move forward to combos of best feature + others
-    for i in range(0, num_features):
-        print(f"On level {i+1} of the search tree")
-        feature_to_add = None
-        accuracy = [0] * num_features
-        for j in range(0, num_features):
-            #once we add a feature, we should not add it again
-            if alg == "1":
-                if j not in curr_features:
-                    features = copy.deepcopy(curr_features)
-                    features.append(j)
-                    accuracy[j] =  leave_one_out_cross_validation(df1, df2, features)
-            if alg == "2":
-                if j in curr_features:
-                    features = [x for x in curr_features if x != j]
-                    accuracy[j] =  leave_one_out_cross_validation(df1, df2, features)
-
-        for j in range(0, num_features):
-            #if new accuracy is better than prev accuracy, we can add feature j
-            if accuracy[j] >= best_so_far_accuracy:
-                best_so_far_accuracy = accuracy[j]
-                feature_to_add = j
-        
-        #if we dont find any features that improve the accuracy, we will exit the search
-        if feature_to_add == None:
-            break
-
-        #add to current features
-        if alg == "1" and feature_to_add != None:
-            curr_features.append(feature_to_add)
-            print(f"Feature set {set(x + 1 for x in curr_features)} " f"was the best, accuracy is {best_so_far_accuracy}.")
-
-        if alg == "2" and feature_to_add != None:
-            curr_features.remove(feature_to_add)
-            print(f"Feature set {set(x + 1 for x in curr_features)} " f"was the best, accuracy is {best_so_far_accuracy}")
-
-        #EDITS MADE: store and print the best accuracy for this level
-        # level_best_accuracies.append(best_so_far_accuracy)
-        # print(f"Best accuracy at level {i+1}: {best_so_far_accuracy}%")
-
-    print(f"Finished search!! The best feature subset is {set(x + 1 for x in curr_features)} which has an accuracy of {round(best_so_far_accuracy, 1)}%.")
-
-    #EDITS MADE: print the list of best accuracies per level
-    # print("Best accuracies per level:", level_best_accuracies)
-    # return curr_features 
-
 def leave_one_out_cross_validation(class1_df, class2_df, features): 
-    # if not features:
-    #     total = len(class1_df) + len(class2_df)
-    #     minority_count = min(len(class1_df), len(class2_df))
-    #     baseline_accuracy = round((minority_count / total) * 100, 2)
-    #     print(f"At the beginning of the search, we have no features ({{}}), so the default rate was {baseline_accuracy}%.")
-    #     return baseline_accuracy
+    if not features:
+        total = len(class1_df) + len(class2_df)
+        minority_count = min(len(class1_df), len(class2_df))
+        baseline_accuracy = round((minority_count / total) * 100, 2)
+        print(f"For the set of no features ({{}}), the accuracy is {round(baseline_accuracy, 1)}%.")
+        return baseline_accuracy
     
     hit = 0
     miss = 0
@@ -135,19 +68,98 @@ def leave_one_out_cross_validation(class1_df, class2_df, features):
                 tie += 1
     total = hit + miss + tie
     accuracy = ((hit + tie) / (hit + miss + tie)) * 100
+    
     print(f"Using feature(s) {set([x + 1 for x in features])}, accuracy is {round(accuracy, 1)}%." )
     return accuracy
                         
+def feature_search(df1, df2, alg):
+    #start empty feature set
+    num_features = len(df1.columns)
+
+    #calculate baseline accuracy using all features before starting the search
+    baseline_accuracy = leave_one_out_cross_validation(df1, df2, list(range(num_features)))
+    print(f"Beginning search. \nRunning nearest neighbor with all {num_features} features, using 'leave-one-out' evaluation, I get an accuracy of: {baseline_accuracy}%")
+    
+    if alg == "1":
+        curr_features = []
+    elif alg == "2":
+        curr_features = [x for x in range(num_features)]
+    
+    best_so_far_accuracy = baseline_accuracy
+    best_feature_set = curr_features.copy()
+
+    #to store the best accuracy per level
+    level_best_accuracies = []
+
+    #for i = 1 to i <= feature, search the ith level
+    #try combinations of features, select best at each level, move forward to combos of best feature + others
+    for i in range(0, num_features):
+        #print(f"\nOn level {i+1} of the search tree")
+        accuracy = [0] * num_features
+        #once we add a feature we should not add it again
+        for j in range(0, num_features):
+            if alg == "1":
+                if j not in curr_features:
+                    features = copy.deepcopy(curr_features)
+                    features.append(j)
+                    accuracy[j] = leave_one_out_cross_validation(df1, df2, features)
+            if alg == "2":
+                if j in curr_features:
+                    features = [x for x in curr_features if x != j]
+                    accuracy[j] = leave_one_out_cross_validation(df1, df2, features)
+
+        #fetermine the best feature for this level regardless of overall accuracy
+        level_best_accuracy = 0  
+        best_feature = None        
+        for j in range(0, num_features):  
+            if alg == "1" and j not in curr_features:  
+                if accuracy[j] > level_best_accuracy:  
+                    level_best_accuracy = accuracy[j]   
+                    best_feature = j                    
+            elif alg == "2" and j in curr_features:       
+                if accuracy[j] > level_best_accuracy:       
+                    level_best_accuracy = accuracy[j]       
+                    best_feature = j                        
+
+        #update overall best accuracy if the current level's best is higher
+        if level_best_accuracy > best_so_far_accuracy:  
+            best_so_far_accuracy = level_best_accuracy
+            if alg == "1":
+                best_feature_set = curr_features.copy() + [best_feature]
+            elif alg == "2":
+                best_feature_set = [x for x in curr_features if x != best_feature]
+
+        #break if no best feature per level (empty set)
+        if best_feature is None:  
+            break                
+
+        feature_to_add = best_feature  
+
+        #add to current features
+        if alg == "1":
+            curr_features.append(feature_to_add)
+            print(f"Feature set {set(x + 1 for x in curr_features)} was the best, accuracy is {round(level_best_accuracy, 1)}.")
+        if alg == "2":
+            curr_features.remove(feature_to_add)
+            if len(set(x + 1 for x in curr_features)) != 0:
+                print(f"Feature set {set(x + 1 for x in curr_features)} was the best, accuracy is {round (level_best_accuracy, 1)}.")
+
+        level_best_accuracies.append(level_best_accuracy)  
+
+    print(f"\nFinished search!! The best feature subset is {set(x + 1 for x in best_feature_set)} which has an accuracy of {round(best_so_far_accuracy, 1)}%.")
+   
+    return curr_features  
+
 def main():
-    dataset = input("Welcome to Rishika Mundada's Feature Selection Algorithm. \nType in the name of the file to test:" + '\n')
-    alg = input("Type in the number of the algorithm you would like to use:" + '\n'
-                      "1) Forward Selection" + '\n'
-                      "2) Backward Elimination" + '\n')
+    dataset = input("Welcome to Rishika Mundada's Feature Selection Algorithm. \nType in the name of the file to test:\n")
+    alg = input("Type in the number of the algorithm you would like to use:\n"
+                "1) Forward Selection\n"
+                "2) Backward Elimination\n")
     class1, class2 = read_data(dataset)
-    print(f"This dataset has {len(class1.columns)} features (not including the class attribute), " 
-          f"with {len(class1)+ len(class2)} instances.")
+    print(f"This dataset has {len(class1.columns)} features (not including the class attribute), with {len(class1) + len(class2)} instances.")
     if alg == "1" or alg == "2":
         feature_search(class1, class2, alg)
     else:
         print("Invalid input")
+
 main()
